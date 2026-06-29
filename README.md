@@ -129,33 +129,6 @@ dbt test
 ```
 
 ---
-
-## 🚀 How to Run
-
-### Prerequisites
-- Snowflake account (free trial at snowflake.com)
-- Python 3.8+
-- dbt-snowflake
-
-### Setup
-
-```bash
-# Install dbt
-pip install dbt-snowflake
-
-# Clone repo
-git clone https://github.com/dharsana2025/olist_dbt_snowflake_pipeline.git
-cd olist_dbt_snowflake_pipeline
-
-# Configure Snowflake connection
-# Create ~/.dbt/profiles.yml with your credentials
-
-# Run pipeline
-dbt run
-dbt test
-dbt docs generate && dbt docs serve
-```
-
 ---
 
 ## 💡 Key Business Insights
