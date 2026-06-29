@@ -130,18 +130,21 @@ dbt test
 
 ---
 ---
-
 ## 💡 Key Business Insights
 
-1. **Top Category:** Health & Beauty generates the highest GMV 
-   among all 74 product categories
-2. **Delivery Performance:** Average delivery is 12 days vs 
-   24 days promised — most orders arrive early
-3. **Customer Segments:** 97% of customers are one-time buyers — 
-   significant retention opportunity
-4. **Review Correlation:** Categories with avg delivery delay 
-   > 5 days score below 3.5 stars on average
+1. **Top Revenue Category:** Health & Beauty leads all 74 product 
+   categories with **R$ 1,237,439 in gross revenue**
 
+2. **Delivery Performance:** Average actual delivery is **12.5 days** 
+   against a promised window of 24 days — majority of orders 
+   arrive ahead of schedule
+
+3. **Customer Retention Gap:** **97.1% of 93,471 customers are 
+   one-time buyers** (90,772 one-time vs 2,654 occasional vs 45 loyal) 
+   — significant opportunity for repeat purchase campaigns
+
+4. **Loyalty is Rare:** Only **45 customers (0.05%)** qualify as 
+   loyal buyers — indicating strong acquisition but weak retention
 ---
 
 ## 📊 Lineage DAG
