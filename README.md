@@ -133,7 +133,7 @@ dbt test
 ## 💡 Key Business Insights
 
 1. **Top Revenue Category:** Health & Beauty leads all 74 product 
-   categories with **R$ 1,237,439 in gross revenue**
+   categories with **$ 1,237,439 in gross revenue**
 
 2. **Delivery Performance:** Average actual delivery is **12.5 days** 
    against a promised window of 24 days — majority of orders 
