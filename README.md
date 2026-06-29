@@ -173,7 +173,7 @@ dbt docs generate && dbt docs serve
 
 ## 📊 Lineage DAG
 
-<img width="1920" height="1080" alt="dbt_serve" src="https://github.com/user-attachments/assets/9f5a2ea3-62dd-4734-a6f4-1dcf24af778b" />
+<img width="1775" height="826" alt="dbt_serve" src="https://github.com/user-attachments/assets/4778b15e-1712-4942-9855-c05f3e2877fa" />
 
 
 ---
