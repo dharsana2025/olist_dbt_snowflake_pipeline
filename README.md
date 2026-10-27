@@ -1,5 +1,5 @@
 # 🛒 Olist Retail Analytics Pipeline
-### dbt + Snowflake | Medallion Architecture | End-to-End Data Pipeline
+### dbt + Snowflake + Snowpark | Medallion Architecture | End-to-End Data Pipeline
 
 ---
 
@@ -7,7 +7,7 @@
 
 An end-to-end retail analytics pipeline built on the 
 **Brazilian E-Commerce (Olist)** public dataset using 
-**dbt + Snowflake**, implementing a 4-layer Medallion architecture 
+**dbt + Snowflake + Snowpark**, implementing a 4-layer Medallion architecture 
 to transform raw transactional data into business-ready KPI tables.
 
 **Business Questions Answered:**
@@ -15,6 +15,7 @@ to transform raw transactional data into business-ready KPI tables.
 - What is the customer lifetime value and repeat purchase rate?
 - How does delivery performance impact review scores?
 - What are monthly GMV trends across Brazilian states?
+- Which customers have high engagement (5-star reviews)?
 
 ---
 
@@ -30,6 +31,8 @@ dbt Staging Layer (7 views) — clean, rename, cast
 dbt Intermediate Layer (2 views) — join, enrich
     ↓
 dbt Marts Layer (3 tables) — business KPIs
+    ↓
+Snowpark UDF (Python) — customer_summary analysis
 ```
 
 ---
@@ -54,7 +57,7 @@ dbt Marts Layer (3 tables) — business KPIs
 
 ![dbt](https://img.shields.io/badge/dbt-FF694B?style=flat&logo=dbt&logoColor=white)
 ![Snowflake](https://img.shields.io/badge/Snowflake-29B5E8?style=flat&logo=snowflake&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
+![Snowpark](https://img.shields.io/badge/Snowpark-Python-3776AB?style=flat&logo=python&logoColor=white)
 ![SQL](https://img.shields.io/badge/SQL-4479A1?style=flat&logo=postgresql&logoColor=white)
 
 ---
@@ -81,6 +84,8 @@ olist_dbt_snowflake_pipeline/
 │       ├── mart_customer_orders.sql
 │       ├── mart_category_performance.sql
 │       └── mart_revenue_trends.sql
+├── snowpark/
+│   └── customer_summary.py
 ├── macros/
 │   └── generate_schema_name.sql
 ├── dbt_project.yml
@@ -117,6 +122,46 @@ olist_dbt_snowflake_pipeline/
 
 ---
 
+## 🐍 Snowpark UDF Layer
+
+### Customer Summary Analysis
+
+**File:** `snowpark/customer_summary.py`
+
+Snowpark module that runs **inside Snowflake warehouse** (no data export) to calculate customer engagement metrics.
+
+**What it does:**
+- Joins orders + reviews tables
+- Groups by customer_id
+- Calculates: total_orders, avg_rating, five_star_count
+- Filters customers with >2 orders
+- Writes results to `RAW.CUSTOMER_SUMMARY` table
+
+**Why Snowpark?**
+- Complex Python logic executes in-warehouse (secure)
+- No data movement = faster, cheaper
+- Results persist as table for dbt/analytics
+
+**Run:**
+```bash
+python snowpark/customer_summary.py
+```
+
+**Output Table:** `RAW.CUSTOMER_SUMMARY`
+```sql
+select * from RAW.CUSTOMER_SUMMARY
+order by avg_rating desc
+limit 10;
+```
+
+| CUSTOMER_ID | TOTAL_ORDERS | AVG_RATING | FIVE_STAR_COUNT |
+|---|---|---|---|
+| c123 | 5 | 4.2 | 3 |
+| c456 | 3 | 3.8 | 1 |
+| c789 | 7 | 4.5 | 6 |
+
+---
+
 ## ✅ Data Quality Tests
 
 23 automated dbt tests across all source and staging models:
@@ -129,7 +174,7 @@ dbt test
 ```
 
 ---
----
+
 ## 💡 Key Business Insights
 
 1. **Top Revenue Category:** Health & Beauty leads all 74 product 
@@ -145,12 +190,39 @@ dbt test
 
 4. **Loyalty is Rare:** Only **45 customers (0.05%)** qualify as 
    loyal buyers — indicating strong acquisition but weak retention
+
+5. **High-Engagement Customers:** Snowpark customer_summary identifies 
+   customers with 5+ star reviews — opportunity for VIP loyalty programs
+
 ---
 
 ## 📊 Lineage DAG
 
 <img width="1775" height="826" alt="dbt_serve" src="https://github.com/user-attachments/assets/4778b15e-1712-4942-9855-c05f3e2877fa" />
 
+---
+
+## 🚀 Quick Start
+
+```bash
+# 1. Clone and setup
+git clone <repo>
+cd olist_dbt_snowflake_pipeline
+pip install dbt-snowflake snowflake-snowpark-python
+
+# 2. Load raw data (from Kaggle)
+dbt seed
+
+# 3. Run dbt transformations
+dbt run
+dbt test
+
+# 4. Run Snowpark analysis
+python snowpark/customer_summary.py
+
+# 5. View results in Snowflake
+select * from RAW.CUSTOMER_SUMMARY;
+```
 
 ---
 
@@ -158,3 +230,4 @@ dbt test
 
 - **Dataset:** [Kaggle — Brazilian E-Commerce](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
 - **dbt Docs:** Generated locally via `dbt docs serve`
+- **Snowpark Docs:** [Snowflake Snowpark Python Guide](https://docs.snowflake.com/en/developer-guide/snowpark/python/)
