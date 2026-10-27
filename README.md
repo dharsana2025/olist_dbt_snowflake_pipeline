@@ -8,14 +8,14 @@
 An end-to-end retail analytics pipeline built on the 
 **Brazilian E-Commerce (Olist)** public dataset using 
 **dbt + Snowflake + Snowpark**, implementing a 4-layer Medallion architecture 
-to transform raw transactional data into business-ready KPI tables.
+to transform raw transactional data into business-ready insights.
 
 **Business Questions Answered:**
 - Which product categories generate the highest revenue?
 - What is the customer lifetime value and repeat purchase rate?
 - How does delivery performance impact review scores?
 - What are monthly GMV trends across Brazilian states?
-- Which customers have high engagement (5-star reviews)?
+- What is the average rating per customer?
 
 ---
 
@@ -32,7 +32,7 @@ dbt Intermediate Layer (2 views) — join, enrich
     ↓
 dbt Marts Layer (3 tables) — business KPIs
     ↓
-Snowpark UDF (Python) — customer_summary analysis
+Snowpark Transformations — join, aggregate, analyze
 ```
 
 ---
@@ -84,10 +84,6 @@ olist_dbt_snowflake_pipeline/
 │       ├── mart_customer_orders.sql
 │       ├── mart_category_performance.sql
 │       └── mart_revenue_trends.sql
-├── snowpark/
-│   └── customer_summary.py
-├── macros/
-│   └── generate_schema_name.sql
 ├── dbt_project.yml
 └── README.md
 ```
@@ -122,43 +118,50 @@ olist_dbt_snowflake_pipeline/
 
 ---
 
-## 🐍 Snowpark UDF Layer
+## 🐍 Snowpark Transformations
 
 ### Customer Summary Analysis
 
-**File:** `snowpark/customer_summary.py`
+Snowpark Python code running **inside Snowflake** to join and aggregate customer data.
 
-Snowpark module that runs **inside Snowflake warehouse** (no data export) to calculate customer engagement metrics.
+**Code:**
+```python
+from snowflake.snowpark import Session
+from snowflake.snowpark.functions import *
 
-**What it does:**
-- Joins orders + reviews tables
-- Groups by customer_id
-- Calculates: total_orders, avg_rating, five_star_count
-- Filters customers with >2 orders
-- Writes results to `RAW.CUSTOMER_SUMMARY` table
+session = Session.builder.getOrCreate()
+
+orders = session.table("olist_db.raw.orders")
+reviews = session.table("olist_db.raw.reviews")
+
+customer_summary = orders.join(
+    reviews,
+    orders.order_id == reviews.order_id,
+    "left"
+).groupBy(
+    orders.customer_id
+).agg(
+    count(orders.order_id).alias("total_orders"),
+    avg(reviews.review_score).alias("avg_rating")
+)
+
+customer_summary.show()
+```
+
+**Output:**
+```
+| CUSTOMER_ID | TOTAL_ORDERS | AVG_RATING |
+|---|---|---|
+| cab782713f3d | 1 | 5.0 |
+| a00f913be49c | 1 | 1.0 |
+| 28e5dd68bcf6 | 1 | 5.0 |
+```
 
 **Why Snowpark?**
-- Complex Python logic executes in-warehouse (secure)
-- No data movement = faster, cheaper
-- Results persist as table for dbt/analytics
-
-**Run:**
-```bash
-python snowpark/customer_summary.py
-```
-
-**Output Table:** `RAW.CUSTOMER_SUMMARY`
-```sql
-select * from RAW.CUSTOMER_SUMMARY
-order by avg_rating desc
-limit 10;
-```
-
-| CUSTOMER_ID | TOTAL_ORDERS | AVG_RATING | FIVE_STAR_COUNT |
-|---|---|---|---|
-| c123 | 5 | 4.2 | 3 |
-| c456 | 3 | 3.8 | 1 |
-| c789 | 7 | 4.5 | 6 |
+- Join orders + reviews **inside Snowflake** (no data export)
+- Python syntax familiar to data engineers
+- Executes efficiently on warehouse compute
+- Results ready for downstream analysis
 
 ---
 
@@ -191,38 +194,14 @@ dbt test
 4. **Loyalty is Rare:** Only **45 customers (0.05%)** qualify as 
    loyal buyers — indicating strong acquisition but weak retention
 
-5. **High-Engagement Customers:** Snowpark customer_summary identifies 
-   customers with 5+ star reviews — opportunity for VIP loyalty programs
+5. **Customer Ratings:** Snowpark analysis shows average customer 
+   rating distribution — insights for satisfaction tracking
 
 ---
 
 ## 📊 Lineage DAG
 
 <img width="1775" height="826" alt="dbt_serve" src="https://github.com/user-attachments/assets/4778b15e-1712-4942-9855-c05f3e2877fa" />
-
----
-
-## 🚀 Quick Start
-
-```bash
-# 1. Clone and setup
-git clone <repo>
-cd olist_dbt_snowflake_pipeline
-pip install dbt-snowflake snowflake-snowpark-python
-
-# 2. Load raw data (from Kaggle)
-dbt seed
-
-# 3. Run dbt transformations
-dbt run
-dbt test
-
-# 4. Run Snowpark analysis
-python snowpark/customer_summary.py
-
-# 5. View results in Snowflake
-select * from RAW.CUSTOMER_SUMMARY;
-```
 
 ---
 
